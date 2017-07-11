@@ -1,0 +1,64 @@
+<!DOCTYPE web-app PUBLIC
+ "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN"
+ "http://java.sun.com/dtd/web-app_2_3.dtd" >
+
+<web-app>
+  <display-name>Archetype Created Web Application</display-name>
+   <!-- This filter enable CORS  ===start 
+ ref: http://chstrongjavablog.blogspot.com.au/2013/04/enabling-cors-for-jetty.html
+ -->
+  <filter>
+        <filter-name>CORS</filter-name>
+        <filter-class>org.eclipse.jetty.servlets.CrossOriginFilter</filter-class>
+
+        <init-param>
+            <param-name>allowedOrigins</param-name>
+            <param-value>*</param-value>
+        </init-param>
+       <init-param>
+            <param-name>allowedMethods</param-name>
+            <param-value>GET,POST,DELETE,PUT,HEAD</param-value>
+        </init-param>
+        <init-param>
+            <param-name>allowedHeaders</param-name>
+            <param-value>origin, content-type, accept, authorization, x-requested-with
+            </param-value>
+        </init-param>
+        <init-param>
+            <param-name>supportsCredentials</param-name>
+            <param-value>true</param-value>
+        </init-param>
+    </filter>
+<!-- This filter enable CORS ===end  -->
+
+   <filter>
+   <filter-name>SparkFilter</filter-name>
+   <filter-class>spark.servlet.SparkFilter</filter-class>
+   <init-param>
+     <param-name>applicationClass</param-name>
+     <param-value>com.nearbit.dev.api.App</param-value>
+   </init-param>
+ </filter>
+ 
+     <filter-mapping>
+        <filter-name>CORS</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+ 
+ <filter-mapping>
+   <filter-name>SparkFilter</filter-name>
+   <url-pattern>/*</url-pattern>
+ </filter-mapping>
+
+<session-config>
+        <session-timeout>7200000</session-timeout>
+</session-config>
+ 
+<resource-ref>
+   <description>DB Connection Basic</description>
+   <res-ref-name>jdbc/pgds_basic</res-ref-name>
+   <res-type>javax.sql.DataSource</res-type>
+   <res-auth>Container</res-auth>
+</resource-ref>
+
+</web-app>
