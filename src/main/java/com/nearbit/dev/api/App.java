@@ -59,7 +59,7 @@ public class App implements SparkApplication {
 		
 
 		//this endpoint support both get and post 
-		get(new Route("/stable/servicearea") {
+		get(new Route("/stable/isochrone") {
 	        @Override
 	        public Object handle(Request request, Response response) {
 	        	
@@ -67,7 +67,7 @@ public class App implements SparkApplication {
 	    		
 	    		try {
 	    			
-	    			info = Controller.runServiceArea(request, response);
+	    			info = Controller.runIsochrone(request, response);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					
@@ -85,7 +85,7 @@ public class App implements SparkApplication {
 	        }
 	     });
 		
-		post(new Route("/stable/servicearea") {
+		post(new Route("/stable/isochrone") {
 	        @Override
 	        public Object handle(Request request, Response response) {
 	        	
@@ -93,7 +93,7 @@ public class App implements SparkApplication {
 	    		
 	    		try {
 	    			
-	    			info = Controller.runServiceArea(request, response);
+	    			info = Controller.runIsochrone(request, response);
 				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					

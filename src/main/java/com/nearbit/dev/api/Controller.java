@@ -18,7 +18,7 @@ public class Controller {
 		
 	static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
-    static public JSONObject runServiceArea(Request request, Response response) throws Exception {
+    static public JSONObject runIsochrone(Request request, Response response) throws Exception {
 		synchronized (request.session()) {
 			
 			JSONObject output = new JSONObject();
