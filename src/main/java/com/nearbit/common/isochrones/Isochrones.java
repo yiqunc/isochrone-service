@@ -370,6 +370,7 @@ public final class Isochrones {
 		
 		DefaultFeatureCollection isoEdgeFC = new DefaultFeatureCollection();
 		DefaultFeatureCollection isoNodeFC = new DefaultFeatureCollection();
+		GeometryCollector isoNodeGC = new GeometryCollector(); // this contains all nodes except start node
 		
 		Set<Integer> visitedWholeEdgeMapIDs =  nbfj.visitedWholeEdgeMap.keySet();
 		Set<String> visitedChoppedEdgeMapIDs =  nbfj.visitedChoppedEdgeMap.keySet();
@@ -405,6 +406,7 @@ public final class Isochrones {
 			f_isoEdge.setAttribute("radius", reachDistance);
 			f_isoEdge.setAttribute("bufsize", bufSize);
 			f_isoEdge.setAttribute("seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
+			f_isoEdge.setAttribute("id", pointFeature.getAttribute("id"));
 			isoEdgeFC.add(f_isoEdge);
 			
 			
@@ -419,8 +421,9 @@ public final class Isochrones {
 			f_isoNode.setAttribute("radius", reachDistance);
 			f_isoNode.setAttribute("bufsize", bufSize);
 			f_isoNode.setAttribute("seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
-			
+			f_isoNode.setAttribute("id", pointFeature.getAttribute("id"));
 			isoNodeFC.add(f_isoNode);
+			isoNodeGC.add(nodeGeom);
 
 			//build up edgebuffer array
 			edgeBuffers[count] = edgeGeom.buffer(bufSize);
@@ -443,6 +446,8 @@ public final class Isochrones {
 		f_isoStartNode.setAttribute("radius", reachDistance);
 		f_isoStartNode.setAttribute("bufsize", bufSize);
 		f_isoStartNode.setAttribute("seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
+		f_isoStartNode.setAttribute("id", pointFeature.getAttribute("id"));
+
 		isoNodeFC.add(f_isoStartNode);
 		
 		//loop visitedChoppedEdgeMapIDs
@@ -462,6 +467,8 @@ public final class Isochrones {
 			f_isoEdge.setAttribute("radius", reachDistance);
 			f_isoEdge.setAttribute("bufsize", bufSize);
 			f_isoEdge.setAttribute("seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
+			f_isoEdge.setAttribute("id", pointFeature.getAttribute("id"));
+
 			isoEdgeFC.add(f_isoEdge);
 			
 			
@@ -476,8 +483,10 @@ public final class Isochrones {
 			f_isoNode.setAttribute("radius", reachDistance);
 			f_isoNode.setAttribute("bufsize", bufSize);
 			f_isoNode.setAttribute("seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
+			f_isoNode.setAttribute("id", pointFeature.getAttribute("id"));
+
 			isoNodeFC.add(f_isoNode);
-			
+			isoNodeGC.add(nodeGeom);
 			//check whether a isoNode feature can be ignored -- there is no need to do this for leaf node
 			
 			//build up edgebuffer array
@@ -522,23 +531,33 @@ public final class Isochrones {
 			execT1 = execT2;
 		}else if(polygondetaillevel.equalsIgnoreCase("mid"))
 		{
+			
 			//use endpoints to generate concavehull, set threshold value with 1/4 of the reachDistance (the reachDistance might be different for one searvice area calculation request if radiusarr is passed in, so this can be self-adaptive)
-			ConcaveHull ch = new ConcaveHull(isoLeafNodeGC.collect(), reachDistance/4.0);
+			ConcaveHull ch = new ConcaveHull(isoNodeGC.collect(), reachDistance/4.0);
 			all = ch.getConcaveHull().buffer(bufSize);
 			execT2 = System.currentTimeMillis();
 			performanceStats.put("t_7", (execT2 - execT1) / 1000d);
 			LOGGER.info("==== Section7-mid (create concave hull with dynamic threshold) Execution time is:{} seconds", df.format((execT2 - execT1) / 1000d));
 			execT1 = execT2;
-		}
-		else{
+		}else if(polygondetaillevel.equalsIgnoreCase("low"))
+		{
 			//use endpoints to generate concavehull, set threshold value with fixed concavehullthreshold
-			ConcaveHull ch = new ConcaveHull(isoLeafNodeGC.collect(), concavehullthreshold);
+			ConcaveHull ch = new ConcaveHull(isoNodeGC.collect(), concavehullthreshold);
 			all = ch.getConcaveHull().buffer(bufSize);
 			execT2 = System.currentTimeMillis();
 			performanceStats.put("t_7", (execT2 - execT1) / 1000d);
 			LOGGER.info("==== Section7-low (create concave hull with fixed threshold) Execution time is:{} seconds", df.format((execT2 - execT1) / 1000d));
 			execT1 = execT2;
 		}
+		else{
+			//get convexhull 
+			all = isoNodeGC.collect().convexHull().buffer(bufSize);
+			execT2 = System.currentTimeMillis();
+			performanceStats.put("t_7", (execT2 - execT1) / 1000d);
+			LOGGER.info("==== Section7-low (create concave hull with fixed threshold) Execution time is:{} seconds", df.format((execT2 - execT1) / 1000d));
+			execT1 = execT2;
+		}
+		
 		
 		roadArea = all.getArea();
 		
@@ -566,6 +585,7 @@ public final class Isochrones {
 		performanceStats.put("para_radius", reachDistance);
 		performanceStats.put("para_bufsize", bufSize);
 		performanceStats.put("para_seedcoord", pointOfInterestGeo.getY()+","+pointOfInterestGeo.getX());
+		performanceStats.put("para_id", pointFeature.getAttribute("id"));
 		sao.performanceStats = performanceStats;
 
 		return sao;
@@ -579,6 +599,7 @@ public final class Isochrones {
 		stb.setName("buffnetwork");
 		stb.add("the_geom", Polygon.class);
 		stb.setDefaultGeometry("the_geom");
+		stb.add("id", String.class);
 		stb.add("seedcoord", String.class);
 		stb.add("calcstatus", String.class);
 		stb.add("roadarea", Double.class);
@@ -589,6 +610,7 @@ public final class Isochrones {
 		Point pt = (Point)sourceFeature.getDefaultGeometry();
 
 		sf.setAttribute("the_geom", geom);
+		sf.setAttribute("id", sourceFeature.getAttribute("id"));
 		sf.setAttribute("seedcoord", pt.getY()+","+pt.getX());
 		sf.setAttribute("calcstatus", status);
 		sf.setAttribute("roadarea",roadArea);
@@ -691,6 +713,7 @@ public final class Isochrones {
 		// add attributes in order
 		builder.add("the_geom", LineString.class);
 		builder.setDefaultGeometry("the_geom");
+		builder.add("id", String.class);
 		//the seed point(startnode) coords
 		builder.add("seedcoord", String.class);
 		//mark if a line seg is chopped or not
@@ -716,6 +739,7 @@ public final class Isochrones {
 		// add attributes in order
 		builder.add("the_geom", Point.class);
 		builder.setDefaultGeometry("the_geom");
+		builder.add("id", String.class);
 		//the seed point(startnode) coords
 		builder.add("seedcoord", String.class);
 		builder.add("nodeid", Integer.class);

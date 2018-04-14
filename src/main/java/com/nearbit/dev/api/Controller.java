@@ -112,9 +112,10 @@ public class Controller {
 				country_code_prefix = country_code+"_";
 			}
 			
-			int maxRadius = 10000;
+			int maxRadius = 200000;
 			int minRadius = 10;
 			int defaultRadius = 500;
+			int thresholdRadiusForSimpleTravelType = 3000;
 			//check if an array of radius is provided
 			JSONArray radiusarr = new JSONArray();
 			JSONArray radiusarrRaw = null;
@@ -223,9 +224,22 @@ public class Controller {
 			if (bufsize>200 || bufsize<5) bufsize = 50;
 			
 			String traveltype = "walk";
-			if(request.queryParams("traveltype")!=null && !request.queryParams("traveltype").equalsIgnoreCase("walk")){
-				traveltype = "drive";
+			if(request.queryParams("traveltype")!=null && !request.queryParams("traveltype").equalsIgnoreCase("simple") && !request.queryParams("traveltype").equalsIgnoreCase("drive")){
+				traveltype = "walk";
+			}else
+			{
+				traveltype = request.queryParams("traveltype").toLowerCase();
 			}
+			
+			//check if any radius bigger than thresholdRadiusForSimpleTravelType, if yes, automatically apply traveltype="simple"
+			boolean autoApplySimpleTravelType = false;
+			for(int i=0;i<radiusarr.length();i++){
+				if(radiusarr.getDouble(i) > thresholdRadiusForSimpleTravelType){
+					autoApplySimpleTravelType = true;
+					break;
+				}
+			}
+			if(autoApplySimpleTravelType) traveltype = "simple";
 			
 			boolean removeholes = true;
 			if(request.queryParams("removeholes")!=null && !request.queryParams("removeholes").equalsIgnoreCase("true")){
@@ -253,7 +267,7 @@ public class Controller {
 				polygondetaillevel = request.queryParams("polygondetaillevel").toLowerCase();
 			}
 			
-			if(!polygondetaillevel.equalsIgnoreCase("mid") && !polygondetaillevel.equalsIgnoreCase("low"))
+			if(!polygondetaillevel.equalsIgnoreCase("mid") && !polygondetaillevel.equalsIgnoreCase("low") && !polygondetaillevel.equalsIgnoreCase("coarse"))
 			{
 				polygondetaillevel = "high";
 			}
@@ -269,7 +283,7 @@ public class Controller {
 				}
 			}
 			
-			if (concavehullthreshold>500 || concavehullthreshold<50) concavehullthreshold = 200;
+			if (concavehullthreshold>5000 || concavehullthreshold<50) concavehullthreshold = 200;
 			
 			
 			boolean recperformance = false;
@@ -322,7 +336,7 @@ public class Controller {
 	    	
 	    	File f = new File(request.raw().getServletContext().getRealPath("/")+"/"+dirname);
         	if(!f.exists()){
-        		boolean flag = f.mkdirs();
+        		f.mkdirs();
         	}
         	
         	return f.getAbsolutePath();

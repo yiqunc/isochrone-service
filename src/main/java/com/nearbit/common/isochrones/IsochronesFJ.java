@@ -1,5 +1,7 @@
 package com.nearbit.common.isochrones;
 
+import java.text.DecimalFormat;
+
 /*
  * Copyright (C) 2016 Benny Chen
  *
@@ -90,11 +92,15 @@ public class IsochronesFJ extends RecursiveAction {
 	@Override
 	protected void compute() {
 		
+		DecimalFormat df = new DecimalFormat("#.00");
+		long execT1 = System.currentTimeMillis();
+		
 		// if a new leaf node is create, give it a proper node id by subtract leafNodeId value
 		int leafNodeId = 999999999;
 		boolean isStartNode = true;
 		int BFSLoopCount = 0;
 		//using breadth first search 
+		
 		while(!isochronesNodeList.isEmpty()){
 			
 			IsochronesNode curIsoNode = isochronesNodeList.removeFirst();
@@ -350,9 +356,14 @@ public class IsochronesFJ extends RecursiveAction {
 			}
 		}
 		
+		long execT2 = System.currentTimeMillis();
+		LOGGER.info("==== Section5.1 (calculate isochrones part1) Execution time is:{} seconds", df.format((execT2 - execT1) / 1000d));
+		
+		execT1 = execT2;
 		//LOGGER.info("===== now all we need is ready in visitedIsochronesNodeMap");
 		// test for the last time if chopped is within whole edge buffer (since till now all whole edge buffer should exist in the visitedWholeEdgeBufferMap)
 		// if yes, its IsochronesNode should be removed from visitedIsochronesNodeMap
+		
 		Set<Integer> nodeIDs = visitedIsochronesNodeMap.keySet();
 		for (Integer nodeID : nodeIDs) {
 			if(visitedIsochronesNodeMap.get(nodeID).isLeaf){
@@ -373,6 +384,8 @@ public class IsochronesFJ extends RecursiveAction {
 			}
 		}
 		
+		execT2 = System.currentTimeMillis();
+		LOGGER.info("==== Section5.2 (calculate isochrones part2) Execution time is:{} seconds", df.format((execT2 - execT1) / 1000d));		
 	}
 
 	

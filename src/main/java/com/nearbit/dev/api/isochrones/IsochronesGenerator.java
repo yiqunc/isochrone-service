@@ -63,7 +63,7 @@ public class IsochronesGenerator {
 		
 		boolean recperformance = options.getBoolean("recperformance");//record performace
 
-		final SimpleFeatureType PointTYPE = DataUtilities.createType("location", "geom:Point,bufsize:Double");
+		final SimpleFeatureType PointTYPE = DataUtilities.createType("location", "geom:Point,bufsize:Double,id:String");
 		WKTReader2 wkt = new WKTReader2();
 
 		DefaultFeatureCollection pointsDFC = new DefaultFeatureCollection();
@@ -71,9 +71,18 @@ public class IsochronesGenerator {
 		for (int i = 0; i < coordarr.length(); i++) {
 			JSONObject p = coordarr.getJSONObject(i);
 			String s = "POINT(" + p.getDouble("lng") + " " + p.getDouble("lat") + ")";
+			String id = "";
+			try{
+				id = p.getString("id");
+			}
+			catch(Exception e){
+				
+			}
+			if(id==null){id = "";}
+			
 			Geometry g = wkt.read(s);
 
-			pointsDFC.add(SimpleFeatureBuilder.build(PointTYPE, new Object[] { g, bufsize }, Integer.toString(i)));
+			pointsDFC.add(SimpleFeatureBuilder.build(PointTYPE, new Object[] { g, bufsize, id}, Integer.toString(i)));
 		}
 
 		SimpleFeatureCollection pointsFC = DataUtilities.simple(pointsDFC);
@@ -126,6 +135,7 @@ public class IsochronesGenerator {
 		stb_netbuf.setName("netbuf");
 		stb_netbuf.add("the_geom", Polygon.class);
 		stb_netbuf.setDefaultGeometry("the_geom");
+		stb_netbuf.add("id", String.class);
 		stb_netbuf.add("radius", Double.class);
 		stb_netbuf.add("bufsize", Double.class);
 		stb_netbuf.add("seedcoord", String.class);
@@ -185,6 +195,7 @@ public class IsochronesGenerator {
 
 				outputf_netbuf.setAttribute("radius", distanceArr.get(count));
 				outputf_netbuf.setAttribute("bufsize", bufsize);
+				outputf_netbuf.setAttribute("id", fNB.getAttribute("id"));
 				outputf_netbuf.setAttribute("seedcoord", fNB.getAttribute("seedcoord"));
 				outputf_netbuf.setAttribute("calcstatus", fNB.getAttribute("status"));
 				outputf_netbuf.setAttribute("roadarea", df.format(fNB.getAttribute("roadarea")));
